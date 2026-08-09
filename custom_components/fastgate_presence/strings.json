@@ -1,0 +1,52 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "FASTGate Presence (DN8245F2)",
+        "description": "Enter the connection details for your FASTGate router.",
+        "data": {
+          "host": "Router IP address",
+          "username": "Username",
+          "password": "Password",
+          "scan_interval": "Polling interval (seconds)"
+        },
+        "data_description": {
+          "host": "IP address of your FASTGate DN8245F2 router (e.g. 192.168.1.254)",
+          "scan_interval": "How often to poll the router for device changes (10-3600 seconds)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Unable to reach the router. Check the IP address and that the router is online.",
+      "invalid_auth": "Invalid username or password.",
+      "login_locked": "Router login is temporarily locked. Please wait a few minutes and try again.",
+      "unknown": "An unexpected error occurred."
+    },
+    "abort": {
+      "already_configured": "This router is already configured."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "FASTGate Presence (DN8245F2) - Options",
+        "description": "Adjust the polling interval, then proceed to select which devices to monitor.",
+        "data": {
+          "scan_interval": "Polling interval (seconds)"
+        }
+      },
+      "select_devices": {
+        "title": "Select Devices to Monitor",
+        "description": "Choose which devices to track. To assign friendly names, add lines in the format:\n{name_format}",
+        "data": {
+          "monitored_devices": "Devices to monitor",
+          "device_names": "Friendly name overrides (MAC=Name, one per line)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Unable to reach the router to fetch the device list.",
+      "coordinator_unavailable": "Integration coordinator is not available. Restart Home Assistant and try again."
+    }
+  }
+}

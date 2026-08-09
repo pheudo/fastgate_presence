@@ -1,0 +1,52 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "FASTGate Presence (DN8245F2)",
+        "description": "Inserisci i dati di connessione al router FASTGate.",
+        "data": {
+          "host": "Indirizzo IP del router",
+          "username": "Nome utente",
+          "password": "Password",
+          "scan_interval": "Intervallo di polling (secondi)"
+        },
+        "data_description": {
+          "host": "Indirizzo IP del tuo FASTGate DN8245F2 (es. 192.168.1.254)",
+          "scan_interval": "Ogni quanti secondi interrogare il router (10?3600)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Impossibile raggiungere il router. Verifica l''indirizzo IP e che il router sia acceso.",
+      "invalid_auth": "Nome utente o password non validi.",
+      "login_locked": "Il login al router ? temporaneamente bloccato. Attendi qualche minuto e riprova.",
+      "unknown": "Errore imprevisto."
+    },
+    "abort": {
+      "already_configured": "Questo router ? gi? configurato."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "FASTGate Presence (DN8245F2) ? Opzioni",
+        "description": "Modifica l''intervallo di polling, poi procedi a selezionare i dispositivi da monitorare.",
+        "data": {
+          "scan_interval": "Intervallo di polling (secondi)"
+        }
+      },
+      "select_devices": {
+        "title": "Seleziona i dispositivi da monitorare",
+        "description": "Scegli i dispositivi da tracciare. Per assegnare nomi leggibili, aggiungi righe nel formato:\n{name_format}",
+        "data": {
+          "monitored_devices": "Dispositivi da monitorare",
+          "device_names": "Nomi personalizzati (MAC=Nome, uno per riga)"
+        }
+      }
+    },
+    "error": {
+      "cannot_connect": "Impossibile raggiungere il router per ottenere la lista dei dispositivi.",
+      "coordinator_unavailable": "Il coordinatore dell''integrazione non ? disponibile. Riavvia Home Assistant e riprova."
+    }
+  }
+}
