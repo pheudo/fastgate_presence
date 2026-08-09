@@ -8,7 +8,6 @@
   "iot_class": "local_polling",
   "issue_tracker": "https://github.com/pheudo/fastgate_presence/issues",
   "loggers": ["custom_components.fastgate_presence"],
-  "homeassistant": "2026.8.0",
   "requirements": ["routerscraper==0.3.1"],
   "version": "0.1.0"
 }
