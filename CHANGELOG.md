@@ -14,7 +14,7 @@
 
 ### Fixed
 
-- Tracked devices keep the last router hostname when they go offline
+- Tracked devices keep the last router hostname when they go offline via the Device Registry
 - Custom friendly names persist offline and override router hostname updates
 
 ## [0.1.0] - 2026-08-09

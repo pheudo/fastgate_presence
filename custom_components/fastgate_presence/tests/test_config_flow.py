@@ -21,7 +21,10 @@ from custom_components.fastgate_presence.const import (
 from custom_components.fastgate_presence.coordinator import (
     FastgatePresenceCoordinator,
 )
-from custom_components.fastgate_presence.device_tracker import tracker_unique_id
+from custom_components.fastgate_presence.device_tracker import (
+    resolve_tracker_name,
+    tracker_unique_id,
+)
 
 
 class TestConfigFlowHelpers:
@@ -100,42 +103,39 @@ class TestDeviceFriendlyNamePersistence:
 
     def test_explicit_name_always_wins(self) -> None:
         """Explicit friendly names should always be used, ignoring router hostname."""
-        coordinator = MagicMock()
-        coordinator.get_device_display_name.return_value = "My Custom Phone"
-        
-        mac = "AA:BB:CC:DD:EE:FF"
-        # When coordinator returns explicit name, use it
-        name = coordinator.get_device_display_name(mac)
-        assert name == "My Custom Phone"
+        assert resolve_tracker_name(
+            "AA:BB:CC:DD:EE:FF",
+            "My Custom Phone",
+            "router-name",
+            "stored-name",
+        ) == "My Custom Phone"
 
     def test_online_device_uses_router_hostname(self) -> None:
         """Online devices without explicit name should use router hostname."""
-        coordinator = MagicMock()
-        coordinator.get_device_display_name.return_value = "kitchen-phone"
-        
-        mac = "AA:BB:CC:DD:EE:FF"
-        name = coordinator.get_device_display_name(mac)
-        assert name == "kitchen-phone"
+        assert resolve_tracker_name(
+            "AA:BB:CC:DD:EE:FF",
+            None,
+            "kitchen-phone",
+            "stored-name",
+        ) == "kitchen-phone"
 
     def test_offline_device_persists_last_hostname(self) -> None:
         """Offline devices should persist the last hostname seen from router."""
-        coordinator = MagicMock()
-        # Device was online, we cached its hostname
-        coordinator.get_device_display_name.return_value = "office-laptop"
-        
-        mac = "11:22:33:44:55:66"
-        # Even though device is now offline, we return cached hostname
-        name = coordinator.get_device_display_name(mac)
-        assert name == "office-laptop"
+        assert resolve_tracker_name(
+            "11:22:33:44:55:66",
+            None,
+            None,
+            "office-laptop",
+        ) == "office-laptop"
 
     def test_offline_device_with_no_prior_hostname_falls_back_to_mac(self) -> None:
         """If device never went online, fall back to MAC."""
-        coordinator = MagicMock()
-        coordinator.get_device_display_name.return_value = None
-        
-        mac = "AA:BB:CC:DD:EE:FF"
-        name = coordinator.get_device_display_name(mac) or mac.upper()
-        assert name == "AA:BB:CC:DD:EE:FF"
+        assert resolve_tracker_name(
+            "AA:BB:CC:DD:EE:FF",
+            None,
+            None,
+            None,
+        ) == "AA:BB:CC:DD:EE:FF"
 
 
 
