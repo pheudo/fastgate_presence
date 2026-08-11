@@ -8,6 +8,8 @@
 
 Home Assistant custom integration that detects device presence by querying a **FASTGate Huawei DN8245F2** router through [RouterScraper](https://pypi.org/project/routerscraper/).
 
+RouterScraper source: [GitHub repository](https://github.com/fra87/RouterScraper).
+
 [hacs-badge]: https://img.shields.io/badge/HACS-Custom-orange.svg
 [hacs-url]: https://hacs.xyz
 [release-badge]: https://img.shields.io/github/v/release/pheudo/fastgate_presence

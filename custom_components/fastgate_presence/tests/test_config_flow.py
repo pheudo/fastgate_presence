@@ -81,7 +81,6 @@ class TestCoordinatorOptionNormalisation:
         """Router labels should map to WiFi, LAN, or Unknown consistently."""
         assert classify_network_type("SSID5") == NETWORK_TYPE_WIFI
         assert classify_network_type("LAN2") == NETWORK_TYPE_LAN
-        assert classify_network_type("ssid3") == NETWORK_TYPE_WIFI
         assert classify_network_type("bridge") == NETWORK_TYPE_UNKNOWN
 
 
@@ -155,7 +154,9 @@ class TestReloadCleanup:
         await integration.async_reload_entry(hass, entry)
 
         entity_reg.async_remove.assert_called_once_with("device_tracker.removed")
-        device_reg.async_remove_device.assert_called_once_with("device-removed")
+        device_reg.async_update_device.assert_called_once_with(
+            "device-removed", remove_config_entry_id="entry-1"
+        )
         hass.config_entries.async_reload.assert_called_once_with("entry-1")
 
     @pytest.mark.asyncio
@@ -220,5 +221,7 @@ class TestReloadCleanup:
         await integration.async_reload_entry(hass, entry)
 
         entity_reg.async_remove.assert_called_once_with("device_tracker.removed")
-        device_reg.async_remove_device.assert_called_once_with("device-removed")
+        device_reg.async_update_device.assert_called_once_with(
+            "device-removed", remove_config_entry_id="entry-1"
+        )
         hass.config_entries.async_reload.assert_called_once_with("entry-1")

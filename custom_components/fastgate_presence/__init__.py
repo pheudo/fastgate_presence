@@ -67,5 +67,7 @@ async def async_reload_entry(hass: HomeAssistant, entry: ConfigEntry) -> None:
                 device_reg, entry.entry_id
             ):
                 if device_entry.identifiers & removed_identifiers:
-                    device_reg.async_remove_device(device_entry.id)
+                    device_reg.async_update_device(
+                        device_entry.id, remove_config_entry_id=entry.entry_id
+                    )
     await hass.config_entries.async_reload(entry.entry_id)
