@@ -145,10 +145,14 @@ FC:AA:14:55:01:23=Living room TV
 - When **online:** Home Assistant displays the current router hostname
 - When **offline:** Home Assistant displays the last hostname seen from the router
 - When **reconnecting:** The name updates to the current router hostname
-- MACs listed in the overrides box are always matched (case-insensitive)
 
 **If a device never went online:**
 - Home Assistant falls back to displaying the MAC address
+
+**If you want to add a device manually:**
+- Add a line like `AA:BB:CC:DD:EE:FF=` in the overrides box
+- Add `AA:BB:CC:DD:EE:FF=My name` if you also want a fixed friendly name
+- Any MAC written in the overrides box is monitored, even if it is not currently online
 
 > **Offline devices:** Add any MAC via the overrides box even if not currently connected. The tracker starts in `not_home` and switches to `home` when detected.
 >

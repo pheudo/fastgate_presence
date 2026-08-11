@@ -47,14 +47,27 @@ def _parse_device_names(raw_names: str) -> dict[str, str]:
     return names
 
 
+def _parse_manual_macs(raw_names: str) -> list[str]:
+    """Parse MAC entries from the overrides text box."""
+    macs: list[str] = []
+    for line in raw_names.splitlines():
+        if "=" not in line:
+            continue
+        mac, _friendly = line.split("=", 1)
+        mac_key = normalize_mac(mac)
+        if mac_key:
+            macs.append(mac_key)
+    return list(dict.fromkeys(macs))
+
+
 def _normalise_mac_list(macs: list[str]) -> list[str]:
     """Return unique, uppercased MACs preserving order."""
     return list(dict.fromkeys(normalize_mac(mac) for mac in macs if mac.strip()))
 
 
-def _merge_monitored_macs(selected_macs: list[str], custom_names: dict[str, str]) -> list[str]:
-    """Keep explicit selections and add any MACs that were named manually."""
-    return list(dict.fromkeys(selected_macs + list(custom_names)))
+def _merge_monitored_macs(selected_macs: list[str], manual_macs: list[str]) -> list[str]:
+    """Keep explicit selections and add any manually entered MACs."""
+    return list(dict.fromkeys(selected_macs + manual_macs))
 
 
 def _try_login(host: str, username: str, password: str) -> loginResult:
@@ -244,11 +257,9 @@ class FastgatePresenceOptionsFlow(OptionsFlow):
             )
             raw_names: str = user_input.get(CONF_DEVICE_NAMES, "")
             new_names: dict[str, str] = _parse_device_names(raw_names)
-            
-            # Only save names that user explicitly specified.
-            # Do not auto-populate names for selected devices without explicit names.
-            # This preserves user intent: selecting a device ≠ naming it.
-            
+            manual_macs: list[str] = _parse_manual_macs(raw_names)
+            selected_macs = _merge_monitored_macs(selected_macs, manual_macs)
+
             return self.async_create_entry(
                 title="",
                 data={
@@ -259,7 +270,7 @@ class FastgatePresenceOptionsFlow(OptionsFlow):
             )
 
         name_hint = "\n".join(
-            f"{mac}={current_names.get(mac, '')}" for mac in current_monitored
+            f"{mac}={current_names[mac]}" for mac in current_monitored if mac in current_names
         )
 
         schema = vol.Schema(

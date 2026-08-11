@@ -9,6 +9,7 @@ import pytest
 import custom_components.fastgate_presence as integration
 from custom_components.fastgate_presence.config_flow import (
     _merge_monitored_macs,
+    _parse_manual_macs,
     _normalise_mac_list,
     _parse_device_names,
 )
@@ -52,11 +53,19 @@ class TestConfigFlowHelpers:
             "11:22:33:44:55:66": "Laptop",
         }
 
-    def test_merge_monitored_macs_includes_custom_names(self) -> None:
-        """Custom MACs entered as names should become monitored trackers."""
+    def test_parse_manual_macs_includes_named_and_unnamed_entries(self) -> None:
+        """Any MAC line in the overrides box should be treated as monitored."""
+        result = _parse_manual_macs(
+            "aa:bb:cc:dd:ee:ff=Primary phone\n11:22:33:44:55:66=\n"
+        )
+
+        assert result == ["AA:BB:CC:DD:EE:FF", "11:22:33:44:55:66"]
+
+    def test_merge_monitored_macs_includes_manual_entries(self) -> None:
+        """Manual MAC entries should become monitored trackers."""
         result = _merge_monitored_macs(
             ["AA:BB:CC:DD:EE:FF"],
-            {"11:22:33:44:55:66": "Studio laptop"},
+            ["11:22:33:44:55:66"],
         )
 
         assert result == ["AA:BB:CC:DD:EE:FF", "11:22:33:44:55:66"]
