@@ -6,9 +6,11 @@
 [![Home Assistant][ha-badge]][ha-url]
 [![Validate][validate-badge]][validate-url]
 
-Home Assistant custom integration that detects device presence by querying a **FASTGate Huawei DN8245F2** router through [RouterScraper](https://pypi.org/project/routerscraper/).
+**Track which devices are connected to your FASTGate Huawei DN8245F2 router in Home Assistant.**
 
-RouterScraper source: [GitHub repository](https://github.com/fra87/RouterScraper).
+Unlike ping-based tracking, this integration queries the router directly for reliable home/away presence detection. No ping, no app, no MQTT—just simple, accurate device tracking.
+
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=pheudo&repository=fastgate_presence)
 
 [hacs-badge]: https://img.shields.io/badge/HACS-Custom-orange.svg
 [hacs-url]: https://hacs.xyz
@@ -21,55 +23,47 @@ RouterScraper source: [GitHub repository](https://github.com/fra87/RouterScraper
 [validate-badge]: https://github.com/pheudo/fastgate_presence/actions/workflows/validate.yml/badge.svg
 [validate-url]: https://github.com/pheudo/fastgate_presence/actions/workflows/validate.yml
 
-[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=pheudo&repository=fastgate_presence)
-
----
-
-## Why this integration?
-
-| Problem with Ping-based tracking | Solution with this integration |
-|---|---|
-| Android stops responding to pings while staying on Wi-Fi | The router knows who is associated: zero false negatives |
-| Variable latency produces spurious `not_home` states | Direct polling of the router API |
-| `device_tracker.see` is deprecated | Uses `ScannerEntity` (modern HA API) |
-| One probe per device, competing polls | A single `DataUpdateCoordinator` feeds all trackers |
-
 ---
 
 ## Features
 
-- No ping, no Companion App, no MQTT
-- Fully UI-driven configuration (no `configuration.yaml` changes required)
-- Selective device monitoring: you choose which devices get a tracker
-- Custom friendly names per device
-- Device Registry entries backed by MAC address
-- Single `DataUpdateCoordinator` polling loop shared by all trackers
-- Installable via HACS
+- **No ping, no Companion App, no MQTT** — pure router API polling
+- **Reliable detection** — Android devices won't randomly show as away while on Wi-Fi
+- **Fully UI-driven** — no `configuration.yaml` needed
+- **Selective monitoring** — choose which devices get a tracker
+- **Custom names** — assign friendly names to each device
+- **Single polling loop** — efficient with a shared `DataUpdateCoordinator`
+- **Installable via HACS**
 
 ---
 
-## Compatibility and support scope
+## Why this integration vs. ping-based tracking?
 
-This integration is intentionally narrow in scope.
+| Problem with Ping | This Integration |
+|---|---|
+| Android stops responding to pings while on Wi-Fi | Router knows who is associated—zero false negatives |
+| Variable latency causes spurious `not_home` states | Direct router API polling—stable and fast |
+| `device_tracker.see` is deprecated | Uses modern `ScannerEntity` API |
+| One probe per device creates polling conflicts | Single `DataUpdateCoordinator` for all devices |
 
-- Implemented backend: `routerscraper.fastgate_dn8245f2`
-- Supported target in this project: **FASTGate Huawei DN8245F2**
-- Other operator routers (including other FASTGate variants and newer non-DN8245F2 models such as NeXXT families) are **not supported** at the moment.
+---
 
-From RouterScraper 0.3.1 metadata and README (PyPI), the Fastgate support is model-specific (`fastgate_dn8245f2`) and `listDevices()` support is declared for that model.
+## Compatibility
+
+- **Supported:** FASTGate Huawei **DN8245F2**
+- **Not supported:** Other FASTGate variants, NeXXT, or other Huawei models
+
+Uses [RouterScraper](https://pypi.org/project/routerscraper/) 0.3.1 with the `fastgate_dn8245f2` backend.
+
+Source: [RouterScraper GitHub repository](https://github.com/fra87/RouterScraper)
 
 ### Default router address
 
-For FASTGate deployments, the router admin UI is commonly reachable on:
+- `http://192.168.1.254` (FASTGate)
+- `http://myfastgate` (FASTGate)
+- `http://192.168.1.1` (other Huawei routers)
 
-- `http://192.168.1.254`
-- `http://myfastgate`
-
-For many non-operator / generic Huawei routers, the common default is instead:
-
-- `http://192.168.1.1`
-
-If these addresses do not work in your network, use the gateway shown by your DHCP lease or router label/manual.
+If these don't work, check your router label or DHCP gateway.
 
 ---
 
@@ -81,7 +75,7 @@ If these addresses do not work in your network, use the gateway shown by your DH
 | Python | >= 3.11 |
 | [routerscraper](https://pypi.org/project/routerscraper/) | 0.3.1 |
 
-> `routerscraper` is installed automatically by Home Assistant via the `requirements` field in `manifest.json`. No manual installation needed.
+> `routerscraper` is installed automatically via Home Assistant. No manual setup needed.
 
 ---
 
@@ -89,51 +83,48 @@ If these addresses do not work in your network, use the gateway shown by your DH
 
 ### Via HACS (recommended)
 
-1. Open **HACS** -> **Integrations** -> three-dot menu -> **Custom repositories**
-2. Add the URL `https://github.com/pheudo/fastgate_presence`, category: **Integration**
+1. Open **HACS** → **Integrations** → three-dot menu → **Custom repositories**
+2. Add `https://github.com/pheudo/fastgate_presence` (category: Integration)
 3. Search for **FASTGate Presence (DN8245F2)** and install
 4. Restart Home Assistant
 
 ### Manual installation
 
 ```bash
-# inside the config/ directory of your Home Assistant instance
-mkdir -p custom_components
-cp -r fastgate_presence/ custom_components/
+mkdir -p ~/config/custom_components
+cp -r fastgate_presence/ ~/config/custom_components/
 ```
 
 Restart Home Assistant.
 
 ---
 
-## Initial configuration
+## Setup
 
-1. Go to **Settings -> Devices & Services -> Add integration**
+### 1. Initial Configuration
+
+1. **Settings → Devices & Services → Create Integration**
 2. Search for **FASTGate Presence (DN8245F2)**
-3. Fill in the following fields:
+3. Fill in:
 
 | Field | Description | Default |
 |---|---|---|
-| Router IP address | IP of the FASTGate DN8245F2 | `192.168.1.254` |
-| Username | Web interface username | `admin` |
-| Password | Web interface password | - |
+| Router IP | FASTGate IP address | `192.168.1.254` |
+| Username | Router web login | `admin` |
+| Password | Router web password | — |
 | Polling interval | Seconds between updates | `60` |
 
-4. The integration verifies the credentials before saving.
+The integration verifies credentials before saving.
 
-> **Security note:** the password is stored by Home Assistant in its encrypted storage (`config/.storage/`). It is never written to logs or included in diagnostics.
+> **Security:** Passwords are encrypted in Home Assistant's secure storage, never logged or exposed in diagnostics.
 
----
+### 2. Select Devices to Monitor
 
-## Selecting devices to monitor
-
-After the initial setup no device trackers are created yet.
-
-1. Go to **Settings -> Devices & Services -> FASTGate Presence (DN8245F2) -> Configure**
-2. Adjust the polling interval if needed, then press **Next**
-3. A list of all devices **currently connected** to the router is displayed
-4. **Select** the ones you want to turn into Device Trackers
-5. In the **Friendly name overrides** text box assign human-readable names:
+1. **Settings → Devices & Services → FASTGate Presence → Configure**
+2. Review/adjust polling interval, click **Next**
+3. See all currently connected devices
+4. **Select** which ones to track
+5. (Optional) Add friendly names in the overrides box:
 
 ```
 AA:BB:CC:DD:EE:FF=Primary phone
@@ -141,35 +132,35 @@ AA:BB:CC:DD:EE:FF=Primary phone
 FC:AA:14:55:01:23=Living room TV
 ```
 
-6. **Save** - Home Assistant reloads and the Device Trackers are created
+6. **Save** — device trackers are created
 
-> **Offline devices:** if a device is not connected at configuration time it will not appear in the list. Wait for it to connect and repeat step 1, or add it manually in the name overrides box (the tracker will be created in `not_home` state and switch to `home` on the next successful poll).
+> **Offline devices:** Add any MAC via the overrides box even if not currently connected. The tracker starts in `not_home` and switches to `home` when detected.
 >
-> MAC matching is case-insensitive: `aa:bb:cc:dd:ee:ff=Phone` and `AA:BB:CC:DD:EE:FF=Phone` are treated the same.
+> MAC addresses are case-insensitive: `aa:bb:cc:dd:ee:ff=Phone` works the same as `AA:BB:CC:DD:EE:FF=Phone`.
 
 ---
 
-## Device Tracker
+## Device Tracker Entities
 
-For each selected device a `device_tracker` entity is created:
+For each monitored device, a `device_tracker.<name>` entity is created.
 
-| State | When |
+### States
+
+| State | Condition |
 |---|---|
-| `home` | The device MAC is present in the router's connected client list |
-| `not_home` | The MAC is no longer listed as connected |
+| `home` | Device MAC detected in router's client list |
+| `not_home` | Device MAC no longer connected |
 
-### Extra state attributes
+### Attributes
 
 | Attribute | Content |
 |---|---|
-| `mac_address` | Normalised uppercase MAC address |
-| `hostname` | Name reported by the router |
-| `ip_address` | DHCP-assigned IP address |
+| `mac_address` | Uppercase MAC address |
+| `hostname` | Name from router |
+| `ip_address` | DHCP-assigned IP |
 | `network_type` | `WiFi`, `LAN`, or `Unknown` |
 
-### Example entity
-
-With friendly name `Primary phone`:
+### Example
 
 ```yaml
 device_tracker.primary_phone:
@@ -184,7 +175,7 @@ device_tracker.primary_phone:
 
 ## Device Registry
 
-Every tracker registers a **Device** in Home Assistant with:
+Each tracker registers a Home Assistant Device:
 
 | Field | Value |
 |---|---|
@@ -196,152 +187,111 @@ Every tracker registers a **Device** in Home Assistant with:
 
 ---
 
-## Updating options
+## Managing Devices
 
-To change the polling interval or add/remove monitored devices:
+### Add or remove devices
 
-**Settings -> Devices & Services -> FASTGate Presence (DN8245F2) -> Configure**
+**Settings → Devices & Services → FASTGate Presence → Configure** → follow step 2 above
 
-Devices that are deselected are removed from Home Assistant on the next reload.
+### Update polling interval
 
-No need to delete and re-add the integration.
+Same configure screen as above.
+
+### Remove a device
+
+Deselect it in the configure screen. On save, the tracker and registry entry are automatically deleted.
 
 ---
 
 ## Diagnostics
 
-**Settings -> Devices & Services -> FASTGate Presence (DN8245F2) -> ... -> Diagnostics**
+**Settings → Devices & Services → FASTGate Presence → ⋮ → Diagnostics**
 
-Includes:
+Shows:
 - Router connection status
-- Number of connected devices
-- Monitored devices and their current state
-- Timestamp of the last successful update
+- Connected device count
+- Monitored devices and states
+- Last update timestamp
+- Network type debugging info
 
-**Never includes:** password, tokens, or any other sensitive data.
+**Safe to share:** Never includes passwords, tokens, or sensitive data.
 
 ---
 
 ## Security
 
-- The **password** is stored in HA's encrypted format (`config/.storage/core.config_entries`), never in plain text
-- Communication with the router uses **local HTTP** (LAN only) - traffic never leaves your home network
-- RouterScraper performs a **new login on every poll cycle** - there are no long-lived sessions to protect
-- Log output never contains credentials; DEBUG level only logs MAC addresses and hostnames
-- The diagnostics payload is safe to share in bug reports and GitHub issues
+- **Password storage:** Encrypted in Home Assistant's secure config storage (`config/.storage/core.config_entries`), never in plain text
+- **Network:** Local HTTP only (LAN only)—no internet traffic
+- **Sessions:** RouterScraper creates a fresh login per poll cycle—no long-lived tokens to protect
+- **Logging:** Credentials never logged; DEBUG logs only MAC and hostname
+- **Diagnostics:** Safe to share publicly
 
 ---
 
 ## Troubleshooting
 
-### Router not reachable
+### Router not reachable (`cannot_connect`)
 
-```
-cannot_connect
-```
+- Verify the IP address
+- Try opening `http://192.168.1.254` or `http://myfastgate` from your network
+- Ensure Home Assistant is on the same LAN (not VPN'd or on a different subnet)
 
-- Verify the IP address is correct
-- Try opening `http://192.168.1.254` or `http://myfastgate` from the same network
-- Ensure Home Assistant is on the same LAN (not on a VPN or different subnet)
+### Login failed (`invalid_auth`)
 
-### Login failed
+- Verify credentials match the router web interface
+- Default username is usually `admin`
+- Default password is on the router label
 
-```
-invalid_auth
-```
+### Login locked (`login_locked`)
 
-- Credentials are the same as for the router web interface
-- The default FASTGate username is usually `admin`
-- The default password is printed on the label on the back of the router
+The router temporarily blocks logins after multiple failed attempts. Wait 5–10 minutes.
 
-### Login locked
+### Device shows `not_home` while still connected
 
-```
-login_locked
-```
+1. Verify the device appears in the router web UI (`http://192.168.1.254`)
+2. Check Home Assistant logs: **Settings → System → Logs** → filter `fastgate_presence`
+3. Try lowering polling interval to 30 s
+4. Confirm the MAC address matches (some devices randomize MACs on reconnect)
 
-The router temporarily blocks logins after too many failed attempts. Wait 5-10 minutes.
+### Randomized MAC addresses (Android 10+, iOS 14+)
 
-### Device switches to `not_home` while still connected
+Android and iOS use randomized MACs per network. They may change on every reconnection.
 
-1. Verify the device appears in the router web interface (`http://192.168.1.254` or `http://myfastgate`)
-2. Check HA logs: **Settings -> System -> Logs**, filter by `fastgate_presence`
-3. Lower the polling interval to 30 s to check for stability
-4. Confirm the selected MAC matches the one shown by the router (some devices use randomised MACs)
-
-### Randomised MAC addresses (Android / iOS)
-
-Android 10+ and iOS 14+ use per-network randomised MAC addresses. The MAC may change on every reconnection.
-
-**Solutions:**
-- **Android:** Wi-Fi -> network -> Advanced -> Privacy -> **Use device MAC**
-- **iOS:** Settings -> Wi-Fi -> network -> **Private Wi-Fi Address -> off**
+**Fix:**
+- **Android:** Wi-Fi → network → Advanced → Privacy → **Use device MAC**
+- **iOS:** Settings → Wi-Fi → network → **Private Wi-Fi Address** → **off**
 
 ---
 
-## Known issues
+## Known Limitations
 
-| Issue | Note |
+| Limitation | Reason |
 |---|---|
-| RouterScraper is synchronous | Polling runs in a thread pool via `async_add_executor_job` to avoid blocking the HA event loop |
-| Login on every poll cycle | The library does not maintain persistent sessions for the DN8245F2 |
-| Variable `Network` field format | Depends on router firmware; normalised to `WiFi` / `LAN` at runtime |
+| RouterScraper is synchronous | Polling runs in a thread pool to avoid blocking Home Assistant |
+| Login on every poll | DN8245F2 doesn't support persistent sessions |
+| Variable network labels | Router firmware formats the `Network` field differently; we normalize to `WiFi`/`LAN` |
 
 ---
 
-## Branding and legal disclaimer
+## Legal
 
-This is an **unofficial** community project and is not endorsed, certified, sponsored, or supported by Huawei, Fastweb, or any other router vendor.
+This is an **unofficial** community project—not endorsed by Huawei, Fastweb, or any router vendor.
 
-The integration is provided "as is", without warranties of any kind, and users remain responsible for verifying local network, legal, and compliance requirements before deployment.
+Provided "as-is" without warranties. Users are responsible for network, legal, and compliance requirements.
 
-`routerscraper` is a third-party dependency; router firmware changes and upstream library changes may affect compatibility at any time.
+RouterScraper is a third-party dependency; firmware and library changes may affect compatibility.
 
-Product names, logos, and trademarks (including Huawei, Fastweb, and FASTGate) remain the property of their respective owners and are used strictly for nominative identification of compatible hardware.
-
----
-
-## Project structure
-
-```
-custom_components/
-+-- fastgate_presence/
-    +-- __init__.py          # Entry setup / unload
-    +-- manifest.json        # HA / HACS manifest
-    +-- const.py             # Constants
-    +-- config_flow.py       # ConfigFlow + OptionsFlow
-    +-- coordinator.py       # DataUpdateCoordinator
-    +-- device_tracker.py    # device_tracker platform (ScannerEntity)
-    +-- entity.py            # Shared base entity
-    +-- diagnostics.py       # Diagnostics endpoint
-    +-- strings.json         # UI strings (base / English)
-    +-- brand/
-    |   +-- icon.png         # Adapted icon derived from Fastweb visual base
-    +-- translations/
-    |   +-- en.json
-    |   +-- it.json
-    +-- icons.json
-    +-- tests/
-        +-- __init__.py
-        +-- test_coordinator.py
-.github/
-+-- workflows/
-    +-- validate.yml         # HACS + hassfest CI
-CHANGELOG.md
-LICENSE
-README.md
-hacs.json
-```
+Product names and trademarks (Huawei, Fastweb, FASTGate) are used for identification only.
 
 ---
 
 ## Contributing
 
-Pull requests and issues are welcome.
+Pull requests and issues welcome.
 
 Before opening a PR:
-1. Ensure the **HACS Action** and **hassfest** checks pass (GitHub Actions)
-2. Run `python -m py_compile` on all modified files
+1. Ensure **HACS** and **hassfest** checks pass (GitHub Actions)
+2. Validate Python: `python -m py_compile` on modified files
 3. Update `CHANGELOG.md`
 
 ---
