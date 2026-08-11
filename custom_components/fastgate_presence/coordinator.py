@@ -48,6 +48,10 @@ class FastgatePresenceCoordinator(DataUpdateCoordinator[dict[str, connectedDevic
 
         self._router_available: bool = False
         self._last_successful_update: datetime | None = None
+        
+        # Cache of last known hostnames for devices without explicit friendly names.
+        # Used to persist the router-reported name when device goes offline.
+        self._last_known_hostnames: dict[str, str] = {}
 
         # Persistent scraper instance reused across polls.
         # Keeping the same instance preserves the session cookie so the router
@@ -185,6 +189,32 @@ class FastgatePresenceCoordinator(DataUpdateCoordinator[dict[str, connectedDevic
     def get_device_names(self) -> dict[str, str]:
         """Return dict of MAC -> friendly name for monitored devices."""
         return dict(self._device_names)
+
+    def get_device_display_name(self, mac: str) -> str | None:
+        """
+        Return the display name for a device.
+        
+        Priority:
+        1. Explicit friendly name (if set in device_names)
+        2. Current hostname (if device is online)
+        3. Last known hostname (if device was previously online)
+        4. None (no name known)
+        """
+        mac_upper = normalize_mac(mac)
+        
+        # Explicit friendly name always wins
+        if mac_upper in self._device_names:
+            return self._device_names[mac_upper]
+        
+        # If device is currently online, return current hostname
+        if mac_upper in self.all_devices:
+            hostname = self.all_devices[mac_upper].Name
+            # Update last known hostname for future offline use
+            self._last_known_hostnames[mac_upper] = hostname
+            return hostname
+        
+        # If device is offline, return last known hostname
+        return self._last_known_hostnames.get(mac_upper)
 
     async def async_verify_credentials(self) -> loginResult:
         """Verify router credentials without affecting the shared scraper session."""

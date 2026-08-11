@@ -134,8 +134,22 @@ FC:AA:14:55:01:23=Living room TV
 
 6. **Save** — device trackers are created
 
-> **Device name persistence:** Whether you select a device from the list or add it via the overrides box, the friendly name is automatically saved. When the device goes offline, the name persists in Home Assistant (you'll see the friendly name even when `state: not_home`).
->
+### Device name behavior
+
+**If you assign a custom friendly name:**
+- The name persists always, both online and offline
+- Router hostname changes are ignored
+- The name never changes (unless you edit it)
+
+**If you select a device from the list without a custom name:**
+- When **online:** Home Assistant displays the current router hostname
+- When **offline:** Home Assistant displays the last hostname seen from the router
+- When **reconnecting:** The name updates to the current router hostname
+- MACs listed in the overrides box are always matched (case-insensitive)
+
+**If a device never went online:**
+- Home Assistant falls back to displaying the MAC address
+
 > **Offline devices:** Add any MAC via the overrides box even if not currently connected. The tracker starts in `not_home` and switches to `home` when detected.
 >
 > MAC addresses are case-insensitive: `aa:bb:cc:dd:ee:ff=Phone` works the same as `AA:BB:CC:DD:EE:FF=Phone`.

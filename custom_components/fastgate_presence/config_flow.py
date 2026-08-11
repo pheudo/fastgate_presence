@@ -245,17 +245,10 @@ class FastgatePresenceOptionsFlow(OptionsFlow):
             raw_names: str = user_input.get(CONF_DEVICE_NAMES, "")
             new_names: dict[str, str] = _parse_device_names(raw_names)
             
-            # Auto-populate friendly names for selected devices without explicit names
-            for mac in selected_macs:
-                if mac not in new_names:
-                    # Try to use the hostname from fresh_devices as fallback
-                    for dev in fresh_devices:
-                        if normalize_mac(dev.MAC) == mac:
-                            new_names[mac] = dev.Name
-                            break
+            # Only save names that user explicitly specified.
+            # Do not auto-populate names for selected devices without explicit names.
+            # This preserves user intent: selecting a device ≠ naming it.
             
-            selected_macs = _merge_monitored_macs(selected_macs, new_names)
-
             return self.async_create_entry(
                 title="",
                 data={

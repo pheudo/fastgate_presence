@@ -58,24 +58,17 @@ async def async_setup_entry(
     )
 
     monitored_macs = coordinator.get_monitored_macs()
-    device_names = coordinator.get_device_names()
 
     entities: list[FastgateDeviceTracker] = []
     for mac in monitored_macs:
         mac_upper = normalize_mac(mac)
-        friendly_name = device_names.get(mac_upper)
-        device_data = coordinator.all_devices.get(mac_upper)
-        
-        # Build the display name:
-        # 1. Use explicit friendly name if set (stable across online/offline)
-        # 2. Use current hostname if online and no friendly name
-        # 3. Fall back to MAC if offline and no friendly name
-        if friendly_name:
-            name = friendly_name
-        elif device_data:
-            name = device_data.Name
-        else:
-            name = friendly_name or mac_upper
+        # Get display name using coordinator logic:
+        # 1. Explicit friendly name
+        # 2. Current hostname if online
+        # 3. Last known hostname if offline
+        # 4. MAC as last resort
+        display_name = coordinator.get_device_display_name(mac_upper)
+        name = display_name or mac_upper
 
         entities.append(
             FastgateDeviceTracker(
