@@ -32,6 +32,12 @@ from .coordinator import FastgatePresenceCoordinator
 _LOGGER = logging.getLogger(__name__)
 
 
+def tracker_unique_id(mac: str) -> str:
+    """Return the entity unique ID for a tracked MAC."""
+    mac_normalized = normalize_mac(mac)
+    return f"{DOMAIN}_{mac_normalized.replace(':', '_')}"
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
@@ -94,7 +100,7 @@ class FastgateDeviceTracker(CoordinatorEntity[FastgatePresenceCoordinator], Scan
         super().__init__(coordinator)
         self._mac = normalize_mac(mac)
         self._friendly_name = name
-        self._attr_unique_id = f"{DOMAIN}_{self._mac.replace(':', '_')}"
+        self._attr_unique_id = tracker_unique_id(self._mac)
         self._attr_name = name
 
     # ------------------------------------------------------------------

@@ -200,6 +200,8 @@ To change the polling interval or add/remove monitored devices:
 
 **Settings -> Devices & Services -> FASTGate Presence (DN8245F2) -> Configure**
 
+Devices that are deselected are removed from Home Assistant on the next reload.
+
 No need to delete and re-add the integration.
 
 ---
