@@ -19,6 +19,8 @@ Home Assistant custom integration that detects device presence by querying a **F
 [validate-badge]: https://github.com/pheudo/fastgate_presence/actions/workflows/validate.yml/badge.svg
 [validate-url]: https://github.com/pheudo/fastgate_presence/actions/workflows/validate.yml
 
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=pheudo&repository=fastgate_presence)
+
 ---
 
 ## Why this integration?
