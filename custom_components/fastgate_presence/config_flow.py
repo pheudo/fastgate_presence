@@ -27,9 +27,34 @@ from .const import (
     DOMAIN,
     MAX_SCAN_INTERVAL,
     MIN_SCAN_INTERVAL,
+    normalize_mac,
 )
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def _parse_device_names(raw_names: str) -> dict[str, str]:
+    """Parse MAC=name lines into a normalised mapping."""
+    names: dict[str, str] = {}
+    for line in raw_names.splitlines():
+        if "=" not in line:
+            continue
+        mac, friendly = line.split("=", 1)
+        mac_key = normalize_mac(mac)
+        friendly_name = friendly.strip()
+        if mac_key and friendly_name:
+            names[mac_key] = friendly_name
+    return names
+
+
+def _normalise_mac_list(macs: list[str]) -> list[str]:
+    """Return unique, uppercased MACs preserving order."""
+    return list(dict.fromkeys(normalize_mac(mac) for mac in macs if mac.strip()))
+
+
+def _merge_monitored_macs(selected_macs: list[str], custom_names: dict[str, str]) -> list[str]:
+    """Keep explicit selections and add any MACs that were named manually."""
+    return list(dict.fromkeys(selected_macs + list(custom_names)))
 
 
 def _try_login(host: str, username: str, password: str) -> loginResult:
@@ -193,11 +218,17 @@ class FastgatePresenceOptionsFlow(OptionsFlow):
         current_names: dict[str, str] = self.config_entry.options.get(
             CONF_DEVICE_NAMES, {}
         )
+        current_monitored = _normalise_mac_list(current_monitored)
+        current_names = {
+            normalize_mac(mac): name
+            for mac, name in current_names.items()
+            if mac.strip()
+        }
 
         # Build selector options from currently connected devices
         device_options: dict[str, str] = {}
         for dev in fresh_devices:
-            mac = dev.MAC.upper()
+            mac = normalize_mac(dev.MAC)
             label = f"{dev.Name} ({mac}) - {dev.IP}"
             device_options[mac] = label
 
@@ -208,18 +239,12 @@ class FastgatePresenceOptionsFlow(OptionsFlow):
                 device_options[mac] = f"{name} ({mac}) - [offline]"
 
         if user_input is not None:
-            selected_macs: list[str] = user_input.get(CONF_MONITORED_DEVICES, [])
+            selected_macs: list[str] = _normalise_mac_list(
+                user_input.get(CONF_MONITORED_DEVICES, [])
+            )
             raw_names: str = user_input.get(CONF_DEVICE_NAMES, "")
-            new_names: dict[str, str] = dict(current_names)
-
-            # Parse "MAC=Friendly Name" lines
-            for line in raw_names.strip().splitlines():
-                if "=" in line:
-                    parts = line.split("=", 1)
-                    mac_key = parts[0].strip().upper()
-                    friendly = parts[1].strip()
-                    if mac_key and friendly:
-                        new_names[mac_key] = friendly
+            new_names: dict[str, str] = _parse_device_names(raw_names)
+            selected_macs = _merge_monitored_macs(selected_macs, new_names)
 
             return self.async_create_entry(
                 title="",

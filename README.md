@@ -142,6 +142,8 @@ FC:AA:14:55:01:23=Living room TV
 6. **Save** - Home Assistant reloads and the Device Trackers are created
 
 > **Offline devices:** if a device is not connected at configuration time it will not appear in the list. Wait for it to connect and repeat step 1, or add it manually in the name overrides box (the tracker will be created in `not_home` state and switch to `home` on the next successful poll).
+>
+> MAC matching is case-insensitive: `aa:bb:cc:dd:ee:ff=Phone` and `AA:BB:CC:DD:EE:FF=Phone` are treated the same.
 
 ---
 

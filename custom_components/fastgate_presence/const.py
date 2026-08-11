@@ -25,3 +25,8 @@ ATTR_NETWORK_TYPE = "network_type"
 
 NETWORK_TYPE_WIFI = "WiFi"
 NETWORK_TYPE_LAN = "LAN"
+
+
+def normalize_mac(mac: str) -> str:
+    """Return a canonical MAC representation used by the integration."""
+    return mac.strip().upper()

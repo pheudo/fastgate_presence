@@ -25,6 +25,7 @@ from .const import (
     NETWORK_TYPE_LAN,
     NETWORK_TYPE_WIFI,
     ROUTER_MODEL,
+    normalize_mac,
 )
 from .coordinator import FastgatePresenceCoordinator
 
@@ -55,8 +56,8 @@ async def async_setup_entry(
 
     entities: list[FastgateDeviceTracker] = []
     for mac in monitored_macs:
-        mac_upper = mac.upper()
-        friendly_name = device_names.get(mac_upper) or device_names.get(mac)
+        mac_upper = normalize_mac(mac)
+        friendly_name = device_names.get(mac_upper)
         device_data = coordinator.all_devices.get(mac_upper)
         hostname = device_data.Name if device_data else mac_upper
         name = friendly_name or hostname
@@ -91,7 +92,7 @@ class FastgateDeviceTracker(CoordinatorEntity[FastgatePresenceCoordinator], Scan
     ) -> None:
         """Initialise the device tracker."""
         super().__init__(coordinator)
-        self._mac = mac.upper()
+        self._mac = normalize_mac(mac)
         self._friendly_name = name
         self._attr_unique_id = f"{DOMAIN}_{self._mac.replace(':', '_')}"
         self._attr_name = name
