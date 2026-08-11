@@ -2,12 +2,21 @@
 
 ## [0.2.0] - 2026-08-11
 
+### Added
+
+- Offline device creation from custom MAC names
+- Raw network type labels and derived network type in diagnostics for debugging firmware-specific variations
+
 ### Changed
 
-- Added offline device creation from custom MAC names
-- Removed deselected device trackers cleanly from Home Assistant registries
 - Improved network type mapping for router labels
-- Added diagnostics details for raw network labels and derived network type
+- Device friendly names now persist when devices go offline (not_home state)
+- Friendly names are auto-populated for selected devices and preserved across reconnections
+- Removed deselected device trackers cleanly from Home Assistant registries
+
+### Fixed
+
+- Device names no longer show as MAC address when offline
 
 ## [0.1.0] - 2026-08-09
 
