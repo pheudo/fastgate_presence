@@ -18,6 +18,7 @@ from .const import (
     CONF_SCAN_INTERVAL,
     DEFAULT_SCAN_INTERVAL,
     DOMAIN,
+    normalize_mac,
 )
 
 _LOGGER = logging.getLogger(__name__)
@@ -32,6 +33,16 @@ class FastgatePresenceCoordinator(DataUpdateCoordinator[dict[str, connectedDevic
         self._host: str = entry.data[CONF_HOST]
         self._username: str = entry.data[CONF_USERNAME]
         self._password: str = entry.data[CONF_PASSWORD]
+        self._monitored_macs: list[str] = [
+            normalize_mac(mac)
+            for mac in entry.options.get(CONF_MONITORED_DEVICES, [])
+            if mac.strip()
+        ]
+        self._device_names: dict[str, str] = {
+            normalize_mac(mac): name
+            for mac, name in entry.options.get(CONF_DEVICE_NAMES, {}).items()
+            if mac.strip()
+        }
 
         scan_interval: int = entry.options.get(CONF_SCAN_INTERVAL, DEFAULT_SCAN_INTERVAL)
 
@@ -134,7 +145,7 @@ class FastgatePresenceCoordinator(DataUpdateCoordinator[dict[str, connectedDevic
         _LOGGER.debug("Found %d device(s) connected to router", len(devices))
 
         new_devices: dict[str, connectedDevice] = {
-            dev.MAC.upper(): dev for dev in devices
+            normalize_mac(dev.MAC): dev for dev in devices
         }
 
         previous = self.data or {}
@@ -169,11 +180,11 @@ class FastgatePresenceCoordinator(DataUpdateCoordinator[dict[str, connectedDevic
 
     def get_monitored_macs(self) -> list[str]:
         """Return MAC addresses configured to be monitored."""
-        return self._entry.options.get(CONF_MONITORED_DEVICES, [])
+        return list(self._monitored_macs)
 
     def get_device_names(self) -> dict[str, str]:
         """Return dict of MAC -> friendly name for monitored devices."""
-        return self._entry.options.get(CONF_DEVICE_NAMES, {})
+        return dict(self._device_names)
 
     async def async_verify_credentials(self) -> loginResult:
         """Verify router credentials without affecting the shared scraper session."""

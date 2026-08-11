@@ -8,6 +8,8 @@
 
 Home Assistant custom integration that detects device presence by querying a **FASTGate Huawei DN8245F2** router through [RouterScraper](https://pypi.org/project/routerscraper/).
 
+RouterScraper source: [GitHub repository](https://github.com/fra87/RouterScraper).
+
 [hacs-badge]: https://img.shields.io/badge/HACS-Custom-orange.svg
 [hacs-url]: https://hacs.xyz
 [release-badge]: https://img.shields.io/github/v/release/pheudo/fastgate_presence
@@ -18,6 +20,8 @@ Home Assistant custom integration that detects device presence by querying a **F
 [ha-url]: https://www.home-assistant.io
 [validate-badge]: https://github.com/pheudo/fastgate_presence/actions/workflows/validate.yml/badge.svg
 [validate-url]: https://github.com/pheudo/fastgate_presence/actions/workflows/validate.yml
+
+[![Open your Home Assistant instance and open a repository inside the Home Assistant Community Store.](https://my.home-assistant.io/badges/hacs_repository.svg)](https://my.home-assistant.io/redirect/hacs_repository/?owner=pheudo&repository=fastgate_presence)
 
 ---
 
@@ -140,6 +144,8 @@ FC:AA:14:55:01:23=Living room TV
 6. **Save** - Home Assistant reloads and the Device Trackers are created
 
 > **Offline devices:** if a device is not connected at configuration time it will not appear in the list. Wait for it to connect and repeat step 1, or add it manually in the name overrides box (the tracker will be created in `not_home` state and switch to `home` on the next successful poll).
+>
+> MAC matching is case-insensitive: `aa:bb:cc:dd:ee:ff=Phone` and `AA:BB:CC:DD:EE:FF=Phone` are treated the same.
 
 ---
 
@@ -159,7 +165,7 @@ For each selected device a `device_tracker` entity is created:
 | `mac_address` | Normalised uppercase MAC address |
 | `hostname` | Name reported by the router |
 | `ip_address` | DHCP-assigned IP address |
-| `network_type` | `WiFi` or `LAN` |
+| `network_type` | `WiFi`, `LAN`, or `Unknown` |
 
 ### Example entity
 
@@ -195,6 +201,8 @@ Every tracker registers a **Device** in Home Assistant with:
 To change the polling interval or add/remove monitored devices:
 
 **Settings -> Devices & Services -> FASTGate Presence (DN8245F2) -> Configure**
+
+Devices that are deselected are removed from Home Assistant on the next reload.
 
 No need to delete and re-add the integration.
 

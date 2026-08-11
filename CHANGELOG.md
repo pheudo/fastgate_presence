@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.2.0] - 2026-08-11
+
+### Changed
+
+- Added offline device creation from custom MAC names
+- Removed deselected device trackers cleanly from Home Assistant registries
+- Improved network type mapping for router labels
+- Added diagnostics details for raw network labels and derived network type
+
 ## [0.1.0] - 2026-08-09
 
 ### Added

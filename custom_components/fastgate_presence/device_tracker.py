@@ -22,13 +22,20 @@ from .const import (
     DOMAIN,
     MANUFACTURER,
     MODEL,
-    NETWORK_TYPE_LAN,
-    NETWORK_TYPE_WIFI,
+    NETWORK_TYPE_UNKNOWN,
     ROUTER_MODEL,
+    classify_network_type,
+    normalize_mac,
 )
 from .coordinator import FastgatePresenceCoordinator
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def tracker_unique_id(mac: str) -> str:
+    """Return the entity unique ID for a tracked MAC."""
+    mac_normalized = normalize_mac(mac)
+    return f"{DOMAIN}_{mac_normalized.replace(':', '_')}"
 
 
 async def async_setup_entry(
@@ -55,8 +62,8 @@ async def async_setup_entry(
 
     entities: list[FastgateDeviceTracker] = []
     for mac in monitored_macs:
-        mac_upper = mac.upper()
-        friendly_name = device_names.get(mac_upper) or device_names.get(mac)
+        mac_upper = normalize_mac(mac)
+        friendly_name = device_names.get(mac_upper)
         device_data = coordinator.all_devices.get(mac_upper)
         hostname = device_data.Name if device_data else mac_upper
         name = friendly_name or hostname
@@ -91,9 +98,9 @@ class FastgateDeviceTracker(CoordinatorEntity[FastgatePresenceCoordinator], Scan
     ) -> None:
         """Initialise the device tracker."""
         super().__init__(coordinator)
-        self._mac = mac.upper()
+        self._mac = normalize_mac(mac)
         self._friendly_name = name
-        self._attr_unique_id = f"{DOMAIN}_{self._mac.replace(':', '_')}"
+        self._attr_unique_id = tracker_unique_id(self._mac)
         self._attr_name = name
 
     # ------------------------------------------------------------------
@@ -138,9 +145,9 @@ class FastgateDeviceTracker(CoordinatorEntity[FastgatePresenceCoordinator], Scan
             attrs[ATTR_IP] = device.IP
             network_raw: str = device.additionalInfo.get("Network", "")
             if network_raw:
-                attrs[ATTR_NETWORK_TYPE] = (
-                    NETWORK_TYPE_WIFI if "wifi" in network_raw.lower() else NETWORK_TYPE_LAN
-                )
+                attrs[ATTR_NETWORK_TYPE] = classify_network_type(network_raw)
+            else:
+                attrs[ATTR_NETWORK_TYPE] = NETWORK_TYPE_UNKNOWN
         return attrs
 
     @property
