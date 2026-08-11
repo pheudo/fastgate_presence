@@ -38,6 +38,22 @@ def tracker_unique_id(mac: str) -> str:
     return f"{DOMAIN}_{mac_normalized.replace(':', '_')}"
 
 
+def resolve_tracker_name(
+    mac: str,
+    friendly_name: str | None,
+    current_hostname: str | None,
+    stored_name: str | None,
+) -> str:
+    """Return the display name for a tracker."""
+    if friendly_name:
+        return friendly_name
+    if current_hostname:
+        return current_hostname
+    if stored_name:
+        return stored_name
+    return normalize_mac(mac)
+
+
 async def async_setup_entry(
     hass: HomeAssistant,
     entry: ConfigEntry,
@@ -58,24 +74,28 @@ async def async_setup_entry(
     )
 
     monitored_macs = coordinator.get_monitored_macs()
-    device_names = coordinator.get_device_names()
 
     entities: list[FastgateDeviceTracker] = []
     for mac in monitored_macs:
         mac_upper = normalize_mac(mac)
-        friendly_name = device_names.get(mac_upper)
-        device_data = coordinator.all_devices.get(mac_upper)
-        
-        # Build the display name:
-        # 1. Use explicit friendly name if set (stable across online/offline)
-        # 2. Use current hostname if online and no friendly name
-        # 3. Fall back to MAC if offline and no friendly name
-        if friendly_name:
-            name = friendly_name
-        elif device_data:
-            name = device_data.Name
-        else:
-            name = friendly_name or mac_upper
+        friendly_name = coordinator.get_device_names().get(mac_upper)
+        current_hostname = None
+        device = coordinator.all_devices.get(mac_upper)
+        if device is not None:
+            current_hostname = device.Name
+
+        stored_name = None
+        for device_entry in dr.async_entries_for_config_entry(dev_reg, entry.entry_id):
+            if (DOMAIN, mac_upper) in device_entry.identifiers:
+                stored_name = device_entry.name
+                break
+
+        name = resolve_tracker_name(
+            mac_upper,
+            friendly_name,
+            current_hostname,
+            stored_name,
+        )
 
         entities.append(
             FastgateDeviceTracker(

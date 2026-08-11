@@ -9,6 +9,7 @@ import pytest
 import custom_components.fastgate_presence as integration
 from custom_components.fastgate_presence.config_flow import (
     _merge_monitored_macs,
+    _parse_manual_macs,
     _normalise_mac_list,
     _parse_device_names,
 )
@@ -21,7 +22,10 @@ from custom_components.fastgate_presence.const import (
 from custom_components.fastgate_presence.coordinator import (
     FastgatePresenceCoordinator,
 )
-from custom_components.fastgate_presence.device_tracker import tracker_unique_id
+from custom_components.fastgate_presence.device_tracker import (
+    resolve_tracker_name,
+    tracker_unique_id,
+)
 
 
 class TestConfigFlowHelpers:
@@ -49,11 +53,19 @@ class TestConfigFlowHelpers:
             "11:22:33:44:55:66": "Laptop",
         }
 
-    def test_merge_monitored_macs_includes_custom_names(self) -> None:
-        """Custom MACs entered as names should become monitored trackers."""
+    def test_parse_manual_macs_includes_named_and_unnamed_entries(self) -> None:
+        """Any MAC line in the overrides box should be treated as monitored."""
+        result = _parse_manual_macs(
+            "aa:bb:cc:dd:ee:ff=Primary phone\n11:22:33:44:55:66=\n"
+        )
+
+        assert result == ["AA:BB:CC:DD:EE:FF", "11:22:33:44:55:66"]
+
+    def test_merge_monitored_macs_includes_manual_entries(self) -> None:
+        """Manual MAC entries should become monitored trackers."""
         result = _merge_monitored_macs(
             ["AA:BB:CC:DD:EE:FF"],
-            {"11:22:33:44:55:66": "Studio laptop"},
+            ["11:22:33:44:55:66"],
         )
 
         assert result == ["AA:BB:CC:DD:EE:FF", "11:22:33:44:55:66"]
@@ -98,64 +110,43 @@ class TestCoordinatorOptionNormalisation:
 class TestDeviceFriendlyNamePersistence:
     """Test that friendly names persist when devices go offline."""
 
-    def test_selected_device_hostname_is_preserved_in_names(self) -> None:
-        """Selected devices should auto-populate with their hostname as fallback name."""
-        from custom_components.fastgate_presence.const import normalize_mac
-        
-        fresh_devices = [
-            SimpleNamespace(
-                Name="kitchen-phone",
-                MAC="AA:BB:CC:DD:EE:FF",
-                IP="192.168.1.10",
-            ),
-            SimpleNamespace(
-                Name="office-laptop",
-                MAC="11:22:33:44:55:66",
-                IP="192.168.1.20",
-            ),
-        ]
-        
-        selected_macs = ["AA:BB:CC:DD:EE:FF", "11:22:33:44:55:66"]
-        new_names: dict[str, str] = {}
-        
-        # Simulate the auto-population logic from config_flow
-        for mac in selected_macs:
-            if mac not in new_names:
-                for dev in fresh_devices:
-                    if normalize_mac(dev.MAC) == mac:
-                        new_names[mac] = dev.Name
-                        break
-        
-        assert new_names == {
-            "AA:BB:CC:DD:EE:FF": "kitchen-phone",
-            "11:22:33:44:55:66": "office-laptop",
-        }
+    def test_explicit_name_always_wins(self) -> None:
+        """Explicit friendly names should always be used, ignoring router hostname."""
+        assert resolve_tracker_name(
+            "AA:BB:CC:DD:EE:FF",
+            "My Custom Phone",
+            "router-name",
+            "stored-name",
+        ) == "My Custom Phone"
 
-    def test_explicit_override_takes_precedence(self) -> None:
-        """Explicitly provided names should not be overwritten by hostname auto-populate."""
-        from custom_components.fastgate_presence.const import normalize_mac
-        
-        fresh_devices = [
-            SimpleNamespace(
-                Name="device1",
-                MAC="AA:BB:CC:DD:EE:FF",
-                IP="192.168.1.10",
-            ),
-        ]
-        
-        selected_macs = ["AA:BB:CC:DD:EE:FF"]
-        new_names = {"AA:BB:CC:DD:EE:FF": "My custom name"}
-        
-        # Simulate the auto-population logic: skip if already in new_names
-        for mac in selected_macs:
-            if mac not in new_names:
-                for dev in fresh_devices:
-                    if normalize_mac(dev.MAC) == mac:
-                        new_names[mac] = dev.Name
-                        break
-        
-        # Custom name should remain
-        assert new_names == {"AA:BB:CC:DD:EE:FF": "My custom name"}
+    def test_online_device_uses_router_hostname(self) -> None:
+        """Online devices without explicit name should use router hostname."""
+        assert resolve_tracker_name(
+            "AA:BB:CC:DD:EE:FF",
+            None,
+            "kitchen-phone",
+            "stored-name",
+        ) == "kitchen-phone"
+
+    def test_offline_device_persists_last_hostname(self) -> None:
+        """Offline devices should persist the last hostname seen from router."""
+        assert resolve_tracker_name(
+            "11:22:33:44:55:66",
+            None,
+            None,
+            "office-laptop",
+        ) == "office-laptop"
+
+    def test_offline_device_with_no_prior_hostname_falls_back_to_mac(self) -> None:
+        """If device never went online, fall back to MAC."""
+        assert resolve_tracker_name(
+            "AA:BB:CC:DD:EE:FF",
+            None,
+            None,
+            None,
+        ) == "AA:BB:CC:DD:EE:FF"
+
+
 
 
 class TestReloadCleanup:
