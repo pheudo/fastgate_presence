@@ -25,8 +25,21 @@ ATTR_NETWORK_TYPE = "network_type"
 
 NETWORK_TYPE_WIFI = "WiFi"
 NETWORK_TYPE_LAN = "LAN"
+NETWORK_TYPE_UNKNOWN = "Unknown"
 
 
 def normalize_mac(mac: str) -> str:
     """Return a canonical MAC representation used by the integration."""
     return mac.strip().upper()
+
+
+def classify_network_type(network_raw: str) -> str:
+    """Map router network labels to a user-facing connection type."""
+    normalized = network_raw.strip().lower()
+    if not normalized:
+        return NETWORK_TYPE_UNKNOWN
+    if normalized.startswith("lan"):
+        return NETWORK_TYPE_LAN
+    if normalized.startswith("ssid"):
+        return NETWORK_TYPE_WIFI
+    return NETWORK_TYPE_UNKNOWN

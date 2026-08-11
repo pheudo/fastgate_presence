@@ -7,7 +7,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import CONF_HOST, CONF_USERNAME
 from homeassistant.core import HomeAssistant
 
-from .const import DOMAIN
+from .const import DOMAIN, classify_network_type
 
 
 async def async_get_config_entry_diagnostics(
@@ -31,7 +31,9 @@ async def async_get_config_entry_diagnostics(
         if device:
             detail["hostname"] = device.Name
             detail["ip"] = device.IP
-            detail["network"] = device.additionalInfo.get("Network", "unknown")
+            network_raw = device.additionalInfo.get("Network", "")
+            detail["network"] = network_raw or "unknown"
+            detail["network_type"] = classify_network_type(network_raw)
         monitored_details.append(detail)
 
     last_update = coordinator.last_successful_update

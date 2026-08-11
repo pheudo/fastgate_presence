@@ -22,9 +22,9 @@ from .const import (
     DOMAIN,
     MANUFACTURER,
     MODEL,
-    NETWORK_TYPE_LAN,
-    NETWORK_TYPE_WIFI,
+    NETWORK_TYPE_UNKNOWN,
     ROUTER_MODEL,
+    classify_network_type,
     normalize_mac,
 )
 from .coordinator import FastgatePresenceCoordinator
@@ -145,9 +145,9 @@ class FastgateDeviceTracker(CoordinatorEntity[FastgatePresenceCoordinator], Scan
             attrs[ATTR_IP] = device.IP
             network_raw: str = device.additionalInfo.get("Network", "")
             if network_raw:
-                attrs[ATTR_NETWORK_TYPE] = (
-                    NETWORK_TYPE_WIFI if "wifi" in network_raw.lower() else NETWORK_TYPE_LAN
-                )
+                attrs[ATTR_NETWORK_TYPE] = classify_network_type(network_raw)
+            else:
+                attrs[ATTR_NETWORK_TYPE] = NETWORK_TYPE_UNKNOWN
         return attrs
 
     @property

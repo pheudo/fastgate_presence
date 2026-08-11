@@ -163,7 +163,7 @@ For each selected device a `device_tracker` entity is created:
 | `mac_address` | Normalised uppercase MAC address |
 | `hostname` | Name reported by the router |
 | `ip_address` | DHCP-assigned IP address |
-| `network_type` | `WiFi` or `LAN` |
+| `network_type` | `WiFi`, `LAN`, or `Unknown` |
 
 ### Example entity
 

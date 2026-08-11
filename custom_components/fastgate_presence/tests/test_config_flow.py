@@ -12,6 +12,12 @@ from custom_components.fastgate_presence.config_flow import (
     _normalise_mac_list,
     _parse_device_names,
 )
+from custom_components.fastgate_presence.const import (
+    NETWORK_TYPE_LAN,
+    NETWORK_TYPE_UNKNOWN,
+    NETWORK_TYPE_WIFI,
+    classify_network_type,
+)
 from custom_components.fastgate_presence.coordinator import (
     FastgatePresenceCoordinator,
 )
@@ -70,6 +76,13 @@ class TestCoordinatorOptionNormalisation:
     def test_tracker_unique_id_uses_uppercase_mac(self) -> None:
         """Entity unique IDs should stay canonical for MAC matching."""
         assert tracker_unique_id("aa:bb:cc:dd:ee:ff") == "fastgate_presence_AA_BB_CC_DD_EE_FF"
+
+    def test_classify_network_type_maps_router_labels(self) -> None:
+        """Router labels should map to WiFi, LAN, or Unknown consistently."""
+        assert classify_network_type("SSID5") == NETWORK_TYPE_WIFI
+        assert classify_network_type("LAN2") == NETWORK_TYPE_LAN
+        assert classify_network_type("ssid3") == NETWORK_TYPE_WIFI
+        assert classify_network_type("bridge") == NETWORK_TYPE_UNKNOWN
 
 
 class TestReloadCleanup:
