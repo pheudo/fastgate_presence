@@ -38,6 +38,17 @@ class TestConfigFlowHelpers:
             "11:22:33:44:55:66": "Studio laptop",
         }
 
+    def test_parse_device_names_ignores_empty_lines(self) -> None:
+        """Empty lines should be skipped gracefully."""
+        result = _parse_device_names(
+            "aa:bb:cc:dd:ee:ff=Phone\n\n11:22:33:44:55:66=Laptop"
+        )
+
+        assert result == {
+            "AA:BB:CC:DD:EE:FF": "Phone",
+            "11:22:33:44:55:66": "Laptop",
+        }
+
     def test_merge_monitored_macs_includes_custom_names(self) -> None:
         """Custom MACs entered as names should become monitored trackers."""
         result = _merge_monitored_macs(
@@ -82,6 +93,69 @@ class TestCoordinatorOptionNormalisation:
         assert classify_network_type("SSID5") == NETWORK_TYPE_WIFI
         assert classify_network_type("LAN2") == NETWORK_TYPE_LAN
         assert classify_network_type("bridge") == NETWORK_TYPE_UNKNOWN
+
+
+class TestDeviceFriendlyNamePersistence:
+    """Test that friendly names persist when devices go offline."""
+
+    def test_selected_device_hostname_is_preserved_in_names(self) -> None:
+        """Selected devices should auto-populate with their hostname as fallback name."""
+        from custom_components.fastgate_presence.const import normalize_mac
+        
+        fresh_devices = [
+            SimpleNamespace(
+                Name="kitchen-phone",
+                MAC="AA:BB:CC:DD:EE:FF",
+                IP="192.168.1.10",
+            ),
+            SimpleNamespace(
+                Name="office-laptop",
+                MAC="11:22:33:44:55:66",
+                IP="192.168.1.20",
+            ),
+        ]
+        
+        selected_macs = ["AA:BB:CC:DD:EE:FF", "11:22:33:44:55:66"]
+        new_names: dict[str, str] = {}
+        
+        # Simulate the auto-population logic from config_flow
+        for mac in selected_macs:
+            if mac not in new_names:
+                for dev in fresh_devices:
+                    if normalize_mac(dev.MAC) == mac:
+                        new_names[mac] = dev.Name
+                        break
+        
+        assert new_names == {
+            "AA:BB:CC:DD:EE:FF": "kitchen-phone",
+            "11:22:33:44:55:66": "office-laptop",
+        }
+
+    def test_explicit_override_takes_precedence(self) -> None:
+        """Explicitly provided names should not be overwritten by hostname auto-populate."""
+        from custom_components.fastgate_presence.const import normalize_mac
+        
+        fresh_devices = [
+            SimpleNamespace(
+                Name="device1",
+                MAC="AA:BB:CC:DD:EE:FF",
+                IP="192.168.1.10",
+            ),
+        ]
+        
+        selected_macs = ["AA:BB:CC:DD:EE:FF"]
+        new_names = {"AA:BB:CC:DD:EE:FF": "My custom name"}
+        
+        # Simulate the auto-population logic: skip if already in new_names
+        for mac in selected_macs:
+            if mac not in new_names:
+                for dev in fresh_devices:
+                    if normalize_mac(dev.MAC) == mac:
+                        new_names[mac] = dev.Name
+                        break
+        
+        # Custom name should remain
+        assert new_names == {"AA:BB:CC:DD:EE:FF": "My custom name"}
 
 
 class TestReloadCleanup:

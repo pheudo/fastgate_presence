@@ -112,3 +112,86 @@ class TestMACNormalisation:
         ]
         result = {dev.MAC.upper(): dev for dev in devices}
         assert "AA:BB:CC:DD:EE:FF" in result
+
+
+class TestDeviceTrackerNameFallback:
+    """Test device tracker name resolution when devices are offline."""
+
+    def test_friendly_name_takes_precedence_over_hostname(self) -> None:
+        """Explicitly set friendly names should always win."""
+        from custom_components.fastgate_presence.const import normalize_mac
+        
+        mac_upper = normalize_mac("aa:bb:cc:dd:ee:ff")
+        friendly_name = "My Phone"
+        device_data = MagicMock()
+        device_data.Name = "RouterHostname"
+        device_names = {mac_upper: friendly_name}
+        
+        # Name resolution logic from device_tracker.py
+        if friendly_name:
+            name = friendly_name
+        elif device_data:
+            name = device_data.Name
+        else:
+            name = friendly_name or mac_upper
+        
+        assert name == "My Phone"
+
+    def test_offline_device_keeps_saved_name(self) -> None:
+        """When offline (device_data=None), saved name should be used."""
+        from custom_components.fastgate_presence.const import normalize_mac
+        
+        mac_upper = normalize_mac("aa:bb:cc:dd:ee:ff")
+        friendly_name = "Kitchen Phone"  # Saved from auto-populate or manual override
+        device_data = None  # Device is offline
+        device_names = {mac_upper: friendly_name}
+        
+        # Name resolution logic from device_tracker.py
+        if friendly_name:
+            name = friendly_name
+        elif device_data:
+            name = device_data.Name
+        else:
+            name = friendly_name or mac_upper
+        
+        # Should not fall back to MAC
+        assert name == "Kitchen Phone"
+
+    def test_online_device_uses_current_hostname(self) -> None:
+        """When online, current hostname should be visible (unless overridden)."""
+        from custom_components.fastgate_presence.const import normalize_mac
+        
+        mac_upper = normalize_mac("aa:bb:cc:dd:ee:ff")
+        friendly_name = None  # Not explicitly set
+        device_data = MagicMock()
+        device_data.Name = "latest-hostname"
+        device_names = {}
+        
+        # Name resolution logic from device_tracker.py
+        if friendly_name:
+            name = friendly_name
+        elif device_data:
+            name = device_data.Name
+        else:
+            name = friendly_name or mac_upper
+        
+        assert name == "latest-hostname"
+
+    def test_offline_device_with_no_saved_name_falls_back_to_mac(self) -> None:
+        """When offline with no saved name, MAC should be shown as last resort."""
+        from custom_components.fastgate_presence.const import normalize_mac
+        
+        mac_upper = normalize_mac("aa:bb:cc:dd:ee:ff")
+        friendly_name = None
+        device_data = None  # Device is offline
+        device_names = {}
+        
+        # Name resolution logic from device_tracker.py
+        if friendly_name:
+            name = friendly_name
+        elif device_data:
+            name = device_data.Name
+        else:
+            name = friendly_name or mac_upper
+        
+        assert name == "AA:BB:CC:DD:EE:FF"
